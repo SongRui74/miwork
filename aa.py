@@ -44,44 +44,38 @@ def transcsv(inputpath , feature="videoDuration", output="./raw.csv"):
 def transcsv_D(inputpath , feature="age", output="./raw.csv"):
     csv_file = open(output, 'w', encoding='utf-8',newline="")  # 默认newline='\n'
     writer = csv.writer(csv_file)
-    writer.writerow(["deviceId",feature])
-    miss = 0
+    featurelist = ["deviceId", feature]
+    writer.writerow(featurelist)
     number = 0
+    miss = 0
     with open(inputpath, 'r', encoding='utf-8') as file:
         for line in file.readlines():
-            data = json.loads(line)
             number = number + 1
-            if feature.__eq__("age") or feature.__eq__("gender"):
+            if number % 5000 == 0:
+                print(str(number) + " lines")
+            data = json.loads(line)
+            value = list()
+            for feature in featurelist:
                 try:
-                    deviceId = data['commonStrMap']['deviceId']
-                    value = data['commonIntMap'][feature]
+                    value.append(data['commonStrMap'][feature])
                 except:
-                    deviceId = None
-                    value = None
+                    value.append(None)
                     miss = miss + 1
-            else:
-                try:
-                    deviceId = data['commonStrMap']['deviceId']
-                    value = data['commonStrMap'][feature]
-                except:
-                    value = None
-                    deviceId = None
-                    miss = miss + 1
-            writer.writerow([deviceId,value])
+            writer.writerow(value)
     csv_file.close()
     file.close()
+    #原始数据特征缺失值
     print(miss)
     print(number)
 
 def readcsv2(input="./raw.csv",feature='age'):
-    reader = pd.read_csv(input, iterator=True, dtype='float')
+    reader = pd.read_csv(input, iterator=True)
     loop = True
     chunksize = 6000
     chunks = []
     while loop:
         try:
             chunk = reader.get_chunk(chunksize)
-            chunk = chunk.dropna(axis=1)
             chunk = chunk.drop_duplicates(['deviceId'])
             chunks.append(chunk)
         except StopIteration:
@@ -90,8 +84,14 @@ def readcsv2(input="./raw.csv",feature='age'):
     df = pd.concat(chunks, ignore_index=True)
     df = pd.DataFrame(df)
     df = df.drop_duplicates(['deviceId']).reset_index(drop=True)
-    df[feature].value_counts().to_csv("./result/" + feature + ".csv", sep="\t", encoding="utf8")
-    print(df.describe())
+    #计算去重后的特征缺失值
+    miss = df.isnull().sum().tolist()[1]
+    number = df.shape[0]
+    ratio = 100 * float(miss) / float(number)
+    print(miss)
+    print(ratio)
+    print(number)
+    df[feature].value_counts().to_csv("./result/" + feature + ".csv", sep="\t", encoding="utf-8")
 
 def readcsv(input="./raw.csv"):
     reader = pd.read_csv(input,iterator=True, dtype='float')
