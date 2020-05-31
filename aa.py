@@ -20,7 +20,7 @@ def readrawdata(inputpath):
     print(df)
     file.close()
 
-def transcsv(inputpath , feature="videoDuration", output="./raw.csv"):
+def transcsv(inputpath , feature="videoDuration", output="./raw_2.csv"):
     csv_file = open(output, 'w', encoding='utf-8',newline="")  # 默认newline='\n'
     writer = csv.writer(csv_file)
     writer.writerow([feature])
@@ -88,10 +88,34 @@ def readcsv2(input="./raw.csv",feature='age'):
     miss = df.isnull().sum().tolist()[1]
     number = df.shape[0]
     ratio = 100 * float(miss) / float(number)
-    print(miss)
-    print(ratio)
-    print(number)
+    # print(miss)
+    # print(ratio)
+    # print(number)
     df[feature].value_counts().to_csv("./result/" + feature + ".csv", sep="\t", encoding="utf-8")
+
+import glob, os
+def read_multicsv():
+    path = r'F:\PycharmProjects\data'
+    file = glob.glob(os.path.join(path, "raw_*.csv"))
+    print(file)
+    dl = []
+    for f in file:
+        reader = pd.read_csv(f, iterator=True, dtype='float')
+        loop = True
+        chunksize = 6000
+        chunks = []
+        while loop:
+            try:
+                chunk = reader.get_chunk(chunksize)
+                chunks.append(chunk)
+            except StopIteration:
+                loop = False
+        dtemp = pd.concat(chunks, ignore_index=True)
+        dl.append(dtemp)
+    df = pd.concat(dl)
+    df = pd.DataFrame(df.describe())
+    df.to_csv("./out.csv", sep="\t")
+
 
 def readcsv(input="./raw.csv"):
     reader = pd.read_csv(input,iterator=True, dtype='float')
@@ -111,6 +135,8 @@ def readcsv(input="./raw.csv"):
     print(df.describe())
 
 if __name__ == '__main__':
+    read_multicsv()
+
     inputpath = './rawdata'
 
     # start = time.clock()
@@ -118,16 +144,17 @@ if __name__ == '__main__':
     # end = time.clock()
     # print(end - start)
 
-    transcsv_D(inputpath)
+    # transcsv(inputpath)
     # start = time.clock()
     # readcsv()
     # end = time.clock()
     # print(end - start)
     #
-    start = time.clock()
-    readcsv2()
-    end = time.clock()
-    print(end - start)
+    # transcsv_D(inputpath)
+    # start = time.clock()
+    # readcsv2()
+    # end = time.clock()
+    # print(end - start)
 
 
 #离散
